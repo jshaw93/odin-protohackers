@@ -65,7 +65,7 @@ main :: proc() {
         }
         clientSock, clientEnd, acceptErr := net.accept_tcp(socket)
         if acceptErr != nil do fmt.panicf("acceptErr: %s", acceptErr)
-        // net.set_option(clientSock, .Receive_Timeout, time.Minute)
+        net.set_option(clientSock, .Receive_Timeout, time.Minute)
         task := ClientTask{clientEndpoint=clientEnd, socket=&clientSock, clientID=clientID}
         // fmt.printfln("Client %v port %v", clientID, clientEnd.port)
         clientID += 1
