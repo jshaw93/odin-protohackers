@@ -59,7 +59,6 @@ main :: proc() {
     clientID : i32 = 0
 
     for {
-        // time.sleep(time.Millisecond*100)
         for thread.pool_num_done(&pool) > 0 {
             thread.pool_pop_done(&pool)
         }
@@ -67,7 +66,6 @@ main :: proc() {
         if acceptErr != nil do fmt.panicf("acceptErr: %s", acceptErr)
         net.set_option(clientSock, .Receive_Timeout, time.Minute)
         task := ClientTask{clientEndpoint=clientEnd, socket=&clientSock, clientID=clientID}
-        // fmt.printfln("Client %v port %v", clientID, clientEnd.port)
         clientID += 1
         thread.pool_add_task(&pool, context.allocator, handleClientTask, &task)
     }
@@ -88,7 +86,6 @@ handleClientTask :: proc(task: thread.Task) {
             net.close(socket)
             return
         }
-        // fmt.printfln("Bytes recv by %v: %v", client, n) // see received bytes
         if n == 0 {
             fmt.printfln("Connection %v closed", client)
             net.close(socket)
