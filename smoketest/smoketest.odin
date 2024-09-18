@@ -92,12 +92,10 @@ handleClientTask :: proc(task: thread.Task) {
             return
         }
         for b, i in data {
+            if i + 3 < len(data) - 1 && bytes.equal(data[i:i+3], {0, 0, 0}) {
+                break
+            }
             append(&message, b)
-        }
-        for {
-            b := message[len(message)-1]
-            if b == 0 do pop(&message)
-            else do break
         }
         n1, sendErr := net.send_tcp(socket, message[:])
         if sendErr != nil {
