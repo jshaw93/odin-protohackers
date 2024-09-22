@@ -5,9 +5,9 @@ import "core:net"
 import "core:thread"
 import "core:time"
 import "core:mem"
-import "core:math"
 import "core:strings"
-import "core:strconv"
+import "core:unicode/utf8"
+import "core:encoding/json"
 
 ADDR :: "0.0.0.0"
 
@@ -15,6 +15,16 @@ ClientTask :: struct {
     socket: ^net.TCP_Socket,
     clientEndpoint: net.Endpoint,
     clientID: i32
+}
+
+Request :: struct{
+    method: string,
+    number: union {i64, f64}
+}
+
+Response :: struct {
+    method: string,
+    prime: bool
 }
 
 main :: proc() {
@@ -54,64 +64,79 @@ handleClientTask :: proc(task: thread.Task) {
     client := clientTask.clientID
     socket := clientTask.socket^
     fmt.println("Handling new client:", client)
+    INVALID :string: "nonsense"
     for {
-        result : [dynamic]string
-        defer delete(result)
-        append(&result, "{\"method\":\"")
-        data : [mem.Kilobyte*2]byte
-        message : [dynamic]byte
-        defer delete(message)
+        data : [mem.Kilobyte*16]byte
         n, recvErr := net.recv_tcp(socket, data[:])
         if n == 0 {
             net.close(socket)
+            fmt.println("socket closed:", client)
             return
         }
-        for b in data {
-            if b == 0 do continue
-            if b == 10 do break
-            append(&message, b)
-        }
-        reqStr := string(message[:])
-        if reqStr[0] != '{' || reqStr[len(reqStr)-1] != '}' {
-            net.send_tcp(socket, transmute([]byte)strings.join(result[:], ""))
-            net.close(socket)
-            return
-        }
-        f : []string = {"{", "}", ",", ":"}
-        splitStr := strings.split_multi(reqStr, f[:])
-        fmt.println(len(splitStr))
-        numberI : int
-        methodI : int
-        for str, i in splitStr {
-            if str == "\"number\"" do numberI = i + 1
-            else if str == "\"method\"" do methodI = i + 1
-        }
-        if numberI == 0 || methodI == 0 || splitStr[methodI] != "\"isPrime\"" {
-            net.send_tcp(socket, transmute([]byte)strings.join(result[:], ""))
-            net.close(socket)
-            return
-        }
-        append(&result, "isPrime")
-        append(&result, "\",\"prime\":")
-        number, parseErr := strconv.parse_i64(splitStr[numberI], 10)
-        if parseErr == false {
-            fmt.panicf("parseErr", parseErr, splitStr[numberI])
-        }
-        fmt.println("recv number, client:", number, client)
-        if number < 0 {
-            append(&result, "false}\n")
-        } else {
-            // fmt.println(isPrime(number), number)
-            if isPrime(number) {
-                append(&result, "true}\n")
+        currentI : int = 0
+        EOF : bool = false
+        for !EOF {
+            req : Request
+            res : Response
+            res.method = "isPrime"
+            handlerArr : [dynamic]byte
+            defer delete(handlerArr)
+            for b, i in data[currentI:n] {
+                if b == 10 {
+                    currentI += i + 1
+                    break
+                }
+                append(&handlerArr, b)
             }
-            else {
-                append(&result, "false}\n")
+            if len(handlerArr) < 1 || handlerArr[0] == 0 {
+                EOF = true
+                continue
+            }
+            unmarshalErr := json.unmarshal(handlerArr[:], &req)
+            if unmarshalErr != nil {
+                net.send_tcp(socket, transmute([]byte)INVALID)
+                continue
+            }
+            if req.number == nil {
+                fmt.println("wtf")
+                return
+            } else if req.method != "isPrime" {
+                net.send_tcp(socket, transmute([]byte)INVALID)
+                continue
+            }
+            // fmt.println(req)
+            switch v in req.number {
+                case i64:
+                    res.prime = isPrime(req.number.(i64))
+                    d, err := json.marshal(res)
+                    if err != nil {
+                        fmt.println("err1", err)
+                    }
+                    d1 := string(d[:])
+                    d2 : []string = {d1, "\n"}
+                    d3 := strings.concatenate(d2)
+                    // fmt.println("Sending", d3)
+                    n1, err1 := net.send_tcp(socket, transmute([]byte)d3)
+                    if err1 != nil {
+                        fmt.println(err1)
+                    }
+                case f64:
+                    res.prime = false
+                    b, err := json.marshal(res)
+                    if err != nil {
+                        fmt.println("err2", err)
+                    }
+                    d1 := string(b[:])
+                    d2 : []string = {d1, "\n"}
+                    d3 := strings.concatenate(d2)
+                    // fmt.println("Sending", d3)
+                    n1, err1 := net.send_tcp(socket, transmute([]byte)d3)
+                    if err1 != nil {
+                        fmt.println(err1)
+                    }
             }
         }
-        // time.sleep(time.Second)
-        // fmt.println(strings.join(result[:], ""), number, client)
-        net.send_tcp(socket, transmute([]byte)strings.join(result[:], ""))
+        EOF = false
     }
 }
 

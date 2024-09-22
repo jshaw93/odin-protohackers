@@ -82,9 +82,7 @@ handleClientTask :: proc(task: thread.Task) {
         defer delete(message)
         n, recvErr := net.recv_tcp(socket, data[:])
         if recvErr != nil {
-            fmt.printfln("Network Error: %s", recvErr)
-            net.close(socket)
-            return
+            fmt.panicf("recvErr: %s", recvErr)
         }
         if n == 0 {
             fmt.printfln("Connection %v closed", client)
