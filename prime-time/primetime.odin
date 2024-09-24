@@ -68,6 +68,14 @@ handleClientTask :: proc(task: thread.Task) {
     for {
         data : [mem.Kilobyte*16]byte
         n, recvErr := net.recv_tcp(socket, data[:])
+        if recvErr != nil {
+            if recvErr == net.TCP_Recv_Error.Connection_Closed {
+                net.close(socket)
+                fmt.println("socket closed", client)
+                return
+            }
+            fmt.panicf("recvErr", recvErr)
+        }
         if n == 0 {
             net.close(socket)
             fmt.println("socket closed:", client)
@@ -94,17 +102,20 @@ handleClientTask :: proc(task: thread.Task) {
             }
             unmarshalErr := json.unmarshal(handlerArr[:], &req)
             if unmarshalErr != nil {
+                fmt.println("invalid json", string(handlerArr[:]))
                 net.send_tcp(socket, transmute([]byte)INVALID)
-                continue
-            }
-            if req.number == nil {
-                fmt.println("wtf")
+                fmt.println("Closing connection", client)
+                net.close(socket)
                 return
-            } else if req.method != "isPrime" {
-                net.send_tcp(socket, transmute([]byte)INVALID)
-                continue
             }
-            // fmt.println(req)
+            if req.number == nil || req.method != "isPrime" {
+                fmt.println("invalid fields", req)
+                net.send_tcp(socket, transmute([]byte)INVALID)
+                fmt.println("Closing connection", client)
+                net.close(socket)
+                return
+            }
+            fmt.println("valid", req)
             switch v in req.number {
                 case i64:
                     res.prime = isPrime(req.number.(i64))
@@ -120,6 +131,7 @@ handleClientTask :: proc(task: thread.Task) {
                     if err1 != nil {
                         fmt.println(err1)
                     }
+                    continue
                 case f64:
                     res.prime = false
                     b, err := json.marshal(res)
@@ -134,6 +146,13 @@ handleClientTask :: proc(task: thread.Task) {
                     if err1 != nil {
                         fmt.println(err1)
                     }
+                    continue
+                case:
+                    fmt.println("invalid number", req)
+                    net.send_tcp(socket, transmute([]byte)INVALID)
+                    fmt.println("Closing connection", client)
+                    net.close(socket)
+                    return
             }
         }
         EOF = false
