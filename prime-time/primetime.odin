@@ -81,6 +81,7 @@ handleClientTask :: proc(task: thread.Task) {
             fmt.println("socket closed:", client)
             return
         }
+        fmt.println(n)
         currentI : int = 0
         EOF : bool = false
         for !EOF {
