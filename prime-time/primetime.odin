@@ -8,6 +8,8 @@ import "core:mem"
 import "core:strings"
 import "core:unicode/utf8"
 import "core:encoding/json"
+import "core:strconv"
+import "../../../odintools/stringTools"
 
 ADDR :: "0.0.0.0"
 
@@ -19,7 +21,7 @@ ClientTask :: struct {
 
 Request :: struct{
     method: string,
-    number: union {i64, f64}
+    number: union {i64, f64, string}
 }
 
 Response :: struct {
@@ -52,7 +54,7 @@ main :: proc() {
         }
         clientSock, clientEnd, acceptErr := net.accept_tcp(socket)
         if acceptErr != nil do fmt.panicf("acceptErr: %s", acceptErr)
-        net.set_option(clientSock, .Receive_Timeout, time.Second*30)
+        net.set_option(clientSock, .Receive_Timeout, time.Second*10)
         task := ClientTask{clientEndpoint=clientEnd, socket=&clientSock, clientID=clientID}
         clientID += 1
         thread.pool_add_task(&pool, context.allocator, handleClientTask, &task)
@@ -65,32 +67,55 @@ handleClientTask :: proc(task: thread.Task) {
     socket := clientTask.socket^
     fmt.println("Handling new client:", client)
     INVALID :string: "nonsense"
+
     for {
-        data : [mem.Kilobyte*16]byte
-        n, recvErr := net.recv_tcp(socket, data[:])
-        if recvErr != nil {
-            if recvErr == net.TCP_Recv_Error.Connection_Closed {
+        queue : [dynamic]byte
+        defer delete(queue)
+        fetchData : for {
+            data : [1460]byte
+            n, recvErr := net.recv_tcp(socket, data[:])
+            if recvErr != nil {
+                if recvErr == net.TCP_Recv_Error.Timeout {
+                    break fetchData
+                }
+                if recvErr == net.TCP_Recv_Error.Connection_Closed {
+                    net.close(socket)
+                    fmt.println("socket closed", client)
+                    return
+                }
+                fmt.panicf("recvErr", recvErr, client)
+            }
+            if n == 0 {
                 net.close(socket)
-                fmt.println("socket closed", client)
+                fmt.println("socket closed:", client)
                 return
             }
-            fmt.panicf("recvErr", recvErr)
+            bounds : int
+            for b, i in data[:n] {
+                if b == 10 && i == n - 1 {
+                    append(&queue, b)
+                    break fetchData
+                }
+                append(&queue, b)
+            }
         }
-        if n == 0 {
-            net.close(socket)
-            fmt.println("socket closed:", client)
-            return
-        }
-        fmt.println(n)
+        // append(&queue, 10)
         currentI : int = 0
         EOF : bool = false
         for !EOF {
+            if queue[0] != 123 {
+                fmt.println("invalid first byte", queue[0])
+                net.send_tcp(socket, transmute([]byte)INVALID)
+                fmt.println("Closing connection", client)
+                net.close(socket)
+                return
+            }
             req : Request
             res : Response
             res.method = "isPrime"
             handlerArr : [dynamic]byte
             defer delete(handlerArr)
-            for b, i in data[currentI:n] {
+            for b, i in queue[currentI:] {
                 if b == 10 {
                     currentI += i + 1
                     break
@@ -101,13 +126,36 @@ handleClientTask :: proc(task: thread.Task) {
                 EOF = true
                 continue
             }
-            unmarshalErr := json.unmarshal(handlerArr[:], &req)
+            numsAreStrings : [dynamic]i64
+            defer delete(numsAreStrings)
+            splitChars : []string = {"{", ",", ":", "}"}
+            strHandle := strings.split_multi(string(handlerArr[:]), splitChars)
+            // if client >= 6 do fmt.println(string(handlerArr[:]), client)
+            for i, index in strHandle {
+                if i == "\"number\"" {
+                    checkNumber : string = strHandle[index+1]
+                    if checkNumber[0] == '\"' && checkNumber[len(checkNumber)-1] == '\"' {
+                        parsed, parseErr := strconv.parse_i64(checkNumber[1:len(checkNumber)-1])
+                        if !parseErr {
+                            continue
+                        }
+                        append(&numsAreStrings, parsed)
+                    }
+                }
+            }
+            unmarshalErr := json.unmarshal(handlerArr[:], &req, json.Specification.JSON5)
             if unmarshalErr != nil {
                 fmt.println("invalid json", string(handlerArr[:]))
                 net.send_tcp(socket, transmute([]byte)INVALID)
                 fmt.println("Closing connection", client)
                 net.close(socket)
                 return
+            }
+            for num in numsAreStrings {
+                if req.number == num {
+                    req.number = stringTools.i64ToString(num)
+                    break
+                }
             }
             if req.number == nil || req.method != "isPrime" {
                 fmt.println("invalid fields", req)
@@ -116,11 +164,13 @@ handleClientTask :: proc(task: thread.Task) {
                 net.close(socket)
                 return
             }
-            fmt.println("valid", req)
+            // if client >= 6 do fmt.println("valid", req, client)
             switch v in req.number {
                 case i64:
                     res.prime = isPrime(req.number.(i64))
-                    d, err := json.marshal(res)
+                    opt : json.Marshal_Options
+                    opt.spec = json.Specification.JSON5
+                    d, err := json.marshal(res, opt)
                     if err != nil {
                         fmt.println("err1", err)
                     }
@@ -130,12 +180,19 @@ handleClientTask :: proc(task: thread.Task) {
                     // fmt.println("Sending", d3)
                     n1, err1 := net.send_tcp(socket, transmute([]byte)d3)
                     if err1 != nil {
+                        if err1 == net.TCP_Send_Error.Connection_Closed {
+                            net.close(socket)
+                            fmt.println("Socket closed", client)
+                            return
+                        }
                         fmt.println(err1)
                     }
                     continue
                 case f64:
                     res.prime = false
-                    b, err := json.marshal(res)
+                    opt : json.Marshal_Options
+                    opt.spec = json.Specification.JSON5
+                    b, err := json.marshal(res, opt)
                     if err != nil {
                         fmt.println("err2", err)
                     }
@@ -145,9 +202,20 @@ handleClientTask :: proc(task: thread.Task) {
                     // fmt.println("Sending", d3)
                     n1, err1 := net.send_tcp(socket, transmute([]byte)d3)
                     if err1 != nil {
+                        if err1 == net.TCP_Send_Error.Connection_Closed {
+                            net.close(socket)
+                            fmt.println("Socket closed", client)
+                            return
+                        }
                         fmt.println(err1)
                     }
                     continue
+                case string:
+                    fmt.println("invalid number: string", req)
+                    net.send_tcp(socket, transmute([]byte)INVALID)
+                    fmt.println("Closing connection", client)
+                    net.close(socket)
+                    return
                 case:
                     fmt.println("invalid number", req)
                     net.send_tcp(socket, transmute([]byte)INVALID)
@@ -156,7 +224,6 @@ handleClientTask :: proc(task: thread.Task) {
                     return
             }
         }
-        EOF = false
     }
 }
 

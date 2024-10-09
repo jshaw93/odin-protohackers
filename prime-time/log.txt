@@ -1,0 +1,113 @@
+Starting server 0.0.0.0 on port 8888
+Handling new client: 0
+socket closed: 0
+Handling new client: 1
+Handling new client: 2
+Handling new client: 3
+Handling new client: 4
+Handling new client: 5
+socket closed: 5
+socket closed: 2
+socket closed: 3
+socket closed: 4
+socket closed: 1
+Handling new client: 6
+{"number":509263,"method":"isPrime"} 6
+valid Request{method = "isPrime", number = 509263} 6
+{"method":4187771,"number":"isPrime"} 6
+invalid number value "isPrime"
+Closing connection 6
+Handling new client: 7
+{"number":616639,"method":"isPrime"} 7
+valid Request{method = "isPrime", number = 616639} 7
+{"method":"isPrime","number":152777} 7
+valid Request{method = "isPrime", number = 152777} 7
+{"method":"isPrime","number":384479} 7
+valid Request{method = "isPrime", number = 384479} 7
+{ 7
+invalid json {
+Closing connection 7
+Handling new client: 8
+invalid first byte 34
+Closing connection 8
+Handling new client: 9
+invalid first byte 0
+Closing connection 9
+Handling new client: 10
+{} 10
+invalid fields Request{method = "", number = nil}
+Closing connection 10
+Handling new client: 11
+{"method":"isPrime","number":"8023573"} 11
+invalid number value "8023573"
+Closing connection 11
+Handling new client: 12
+{"method":"isPrime"} 12
+invalid fields Request{method = "isPrime", number = nil}
+Closing connection 12
+Handling new client: 13
+{"method":"isntPrime","number":1741806} 13
+invalid fields Request{method = "isntPrime", number = 1741806}
+Closing connection 13
+Handling new client: 14
+{"number":501157,"method":"isPrime"} 14
+valid Request{method = "isPrime", number = 501157} 14
+{"method":"isPrime","number":7402932 14
+invalid json {"method":"isPrime","number":7402932
+Closing connection 14
+Handling new client: 15
+{"method":"isPrime","number":969131} 15
+valid Request{method = "isPrime", number = 969131} 15
+{"number":46303,"method":"isPrime"} 15
+valid Request{method = "isPrime", number = 46303} 15
+{"method":"isPrime","number":440286} 15
+valid Request{method = "isPrime", number = 440286} 15
+{"method":"isPrime","number":852367} 15
+valid Request{method = "isPrime", number = 852367} 15
+invalid first byte 73
+Closing connection 15
+Handling new client: 16
+{"method":"isPrime","number":632508} 16
+valid Request{method = "isPrime", number = 632508} 16
+{"number":921677,"method":"isPrime"} 16
+valid Request{method = "isPrime", number = 921677} 16
+invalid first byte 125
+Closing connection 16
+Handling new client: 17
+{"method":"isPrime","number":654474} 17
+valid Request{method = "isPrime", number = 654474} 17
+{"method":"isPrime","number":211998} 17
+valid Request{method = "isPrime", number = 211998} 17
+invalid first byte 91
+Closing connection 17
+Handling new client: 18
+{"number":9774365} 18
+invalid fields Request{method = "", number = 9774365}
+Closing connection 18
+Handling new client: 19
+{"number":171449,"method":"isPrime"} 19
+valid Request{method = "isPrime", number = 171449} 19
+invalid first byte 71
+Closing connection 19
+Handling new client: 20
+{"method":"isPrime", 20
+invalid json {"method":"isPrime",
+Closing connection 20
+Handling new client: 21
+{"method":"isPrime","number":[9041803]} 21
+invalid json {"method":"isPrime","number":[9041803]}
+Closing connection 21
+Handling new client: 22
+{"method":"isPrime","number":true} 22
+invalid json {"method":"isPrime","number":true}
+Closing connection 22
+Handling new client: 23
+{"method":"isPrime","number":195659} 23
+valid Request{method = "isPrime", number = 195659} 23
+{"method":"isPrime","number":5489} 23
+valid Request{method = "isPrime", number = 5489} 23
+{"number":909037,"method":"isPrime"} 23
+valid Request{method = "isPrime", number = 909037} 23
+{"method":"isPrime","number":3174195,"nummar":"the royale the peach for the PROTOHACKERS royale now good now come integral royale calculator about men men giant intrusion the the quartz nasa for sphinx men integral party something of intrusion prisoners of good nasa peach peach sphinx quartz party of sphinx casino hypnotic nasa for favicon is now is come bluebell calculator favicon casino bluebell PROTOHACKERS all calculator hypnotic to hypnotic sphinx hypnotic hypnotic favicon party aid peach peach to for PROTOHACKERS now about is for sphinx jackdaws bluebell good PROTOHACKERS about aid giant love come intrusion casino time to intrusion for giant the now to jackdaws good giant sphinx about prisoners to love nasa party quartz nasa come PROTOHACKERS men casino to is something royale party for for to love giant good bluebell giant men the to the sphinx peach casino now royale integral of nasa of giant come prisoners the casino the to calculator favicon jackdaws bluebell royale calculator to hypnotic good favicon to something calculator of love quartz hypnotic giant intrusion jackdaws now to the for party calculator favicon now quartz my of men to quartz quartz aid the for men now of peach of is come something my to hypnotic men royale favicon the jackdaws the favicon of the casino intrusion bluebell is is love jackdaws men quartz the the calculator giant intrusion all about nasa to sphinx PROTOHACKERS prisoners aid for giant now the about the nasa of nasa good come calculator of prisoners for of calculator to come good love aid nasa intrusion aid now integral bluebell aid love calculator integral nasa all royale jackdaws party the now aid of royale my casino about calculator to love giant for sphinx of love aid PROTOHACKERS aid of favicon jackdaws favicon PROTOHACKERS of is of love the calculator something the something aid integral peach the now PROTOHACKERS integral of of the the favicon PROTOHACKERS the something bluebell party good casino good calculator time about the something men for hypnotic intrusion intrusion peach casino about prisoners the the aid hypnotic integral for come casino the for all royale is PROTOHACKERS come party is peach giant jackdaws giant my prisoners bluebell quartz good bluebell PROTOHACKERS time intrusion aid of aid prisoners prisoners quartz something favicon of sphinx the to prisoners bluebell for intrusion men casino intrusion calculator the jackdaws party all my the the casino integral now party of jackdaws now PROTOHACKERS of about of hypnotic now peach casino the the come peach nasa quartz prisoners sphinx aid intrusion to bluebell is nasa sphinx royale to something of something prisoners hypnotic casino men PROTOHACKERS intrusion casino intrusion the men integral royale integral intrusion for peach time time the the for my sphinx love the calculator the peach come to men sphinx the sphinx now to giant now for royale intrusion calcu 23
+invalid json {"method":"isPrime","number":3174195,"nummar":"the royale the peach for the PROTOHACKERS royale now good now come integral royale calculator about men men giant intrusion the the quartz nasa for sphinx men integral party something of intrusion prisoners of good nasa peach peach sphinx quartz party of sphinx casino hypnotic nasa for favicon is now is come bluebell calculator favicon casino bluebell PROTOHACKERS all calculator hypnotic to hypnotic sphinx hypnotic hypnotic favicon party aid peach peach to for PROTOHACKERS now about is for sphinx jackdaws bluebell good PROTOHACKERS about aid giant love come intrusion casino time to intrusion for giant the now to jackdaws good giant sphinx about prisoners to love nasa party quartz nasa come PROTOHACKERS men casino to is something royale party for for to love giant good bluebell giant men the to the sphinx peach casino now royale integral of nasa of giant come prisoners the casino the to calculator favicon jackdaws bluebell royale calculator to hypnotic good favicon to something calculator of love quartz hypnotic giant intrusion jackdaws now to the for party calculator favicon now quartz my of men to quartz quartz aid the for men now of peach of is come something my to hypnotic men royale favicon the jackdaws the favicon of the casino intrusion bluebell is is love jackdaws men quartz the the calculator giant intrusion all about nasa to sphinx PROTOHACKERS prisoners aid for giant now the about the nasa of nasa good come calculator of prisoners for of calculator to come good love aid nasa intrusion aid now integral bluebell aid love calculator integral nasa all royale jackdaws party the now aid of royale my casino about calculator to love giant for sphinx of love aid PROTOHACKERS aid of favicon jackdaws favicon PROTOHACKERS of is of love the calculator something the something aid integral peach the now PROTOHACKERS integral of of the the favicon PROTOHACKERS the something bluebell party good casino good calculator time about the something men for hypnotic intrusion intrusion peach casino about prisoners the the aid hypnotic integral for come casino the for all royale is PROTOHACKERS come party is peach giant jackdaws giant my prisoners bluebell quartz good bluebell PROTOHACKERS time intrusion aid of aid prisoners prisoners quartz something favicon of sphinx the to prisoners bluebell for intrusion men casino intrusion calculator the jackdaws party all my the the casino integral now party of jackdaws now PROTOHACKERS of about of hypnotic now peach casino the the come peach nasa quartz prisoners sphinx aid intrusion to bluebell is nasa sphinx royale to something of something prisoners hypnotic casino men PROTOHACKERS intrusion casino intrusion the men integral royale integral intrusion for peach time time the the for my sphinx love the calculator the peach come to men sphinx the sphinx now to giant now for royale intrusion calcu
+Closing connection 23
