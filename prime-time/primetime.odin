@@ -54,7 +54,8 @@ main :: proc() {
         }
         clientSock, clientEnd, acceptErr := net.accept_tcp(socket)
         if acceptErr != nil do fmt.panicf("acceptErr: %s", acceptErr)
-        net.set_option(clientSock, .Receive_Timeout, time.Second*10)
+        net.set_option(clientSock, .Receive_Timeout, time.Second*4)
+        // net.set_option(clientSock, .Receive_Buffer_Size, mem.Kilobyte*16)
         task := ClientTask{clientEndpoint=clientEnd, socket=&clientSock, clientID=clientID}
         clientID += 1
         thread.pool_add_task(&pool, context.allocator, handleClientTask, &task)
@@ -69,42 +70,26 @@ handleClientTask :: proc(task: thread.Task) {
     INVALID :string: "nonsense"
 
     for {
-        queue : [dynamic]byte
-        defer delete(queue)
-        fetchData : for {
-            data : [1460]byte
-            n, recvErr := net.recv_tcp(socket, data[:])
-            if recvErr != nil {
-                if recvErr == net.TCP_Recv_Error.Timeout {
-                    break fetchData
-                }
-                if recvErr == net.TCP_Recv_Error.Connection_Closed {
-                    net.close(socket)
-                    fmt.println("socket closed", client)
-                    return
-                }
-                fmt.panicf("recvErr", recvErr, client)
-            }
-            if n == 0 {
+        data := make([]byte, mem.Kilobyte*16)
+        n, recvErr := net.recv_tcp(socket, data)
+        if recvErr != nil {
+            if recvErr == net.TCP_Recv_Error.Connection_Closed {
                 net.close(socket)
-                fmt.println("socket closed:", client)
+                fmt.println("socket closed", client)
                 return
             }
-            bounds : int
-            for b, i in data[:n] {
-                if b == 10 && i == n - 1 {
-                    append(&queue, b)
-                    break fetchData
-                }
-                append(&queue, b)
-            }
+            fmt.panicf("recvErr", recvErr, client)
         }
-        // append(&queue, 10)
+        if n == 0 {
+            net.close(socket)
+            fmt.println("socket closed:", client)
+            return
+        }
+        bounds : int
         currentI : int = 0
-        EOF : bool = false
-        for !EOF {
-            if queue[0] != 123 {
-                fmt.println("invalid first byte", queue[0])
+        iterateData : for {
+            if data[0] != 123 {
+                fmt.println("invalid first byte", data[0])
                 net.send_tcp(socket, transmute([]byte)INVALID)
                 fmt.println("Closing connection", client)
                 net.close(socket)
@@ -115,16 +100,17 @@ handleClientTask :: proc(task: thread.Task) {
             res.method = "isPrime"
             handlerArr : [dynamic]byte
             defer delete(handlerArr)
-            for b, i in queue[currentI:] {
+            for b, i in data[currentI:n] {
                 if b == 10 {
-                    currentI += i + 1
+                    currentI += 1
                     break
                 }
                 append(&handlerArr, b)
+                currentI += 1
             }
+            // fmt.println(len(handlerArr), currentI)
             if len(handlerArr) < 1 || handlerArr[0] == 0 {
-                EOF = true
-                continue
+                break iterateData
             }
             numsAreStrings : [dynamic]i64
             defer delete(numsAreStrings)
