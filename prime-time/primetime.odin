@@ -54,8 +54,10 @@ main :: proc() {
         }
         clientSock, clientEnd, acceptErr := net.accept_tcp(socket)
         if acceptErr != nil do fmt.panicf("acceptErr: %s", acceptErr)
-        net.set_option(clientSock, .Receive_Timeout, time.Second*4)
-        // net.set_option(clientSock, .Receive_Buffer_Size, mem.Kilobyte*16)
+        net.set_option(clientSock, .Receive_Timeout, time.Second*30)
+        net.set_option(clientSock, .Receive_Buffer_Size, mem.Kilobyte*32)
+        net.set_option(clientSock, .Linger, time.Second*15)
+        net.set_option(clientSock, .Keep_Alive, true)
         task := ClientTask{clientEndpoint=clientEnd, socket=&clientSock, clientID=clientID}
         clientID += 1
         thread.pool_add_task(&pool, context.allocator, handleClientTask, &task)
@@ -70,7 +72,7 @@ handleClientTask :: proc(task: thread.Task) {
     INVALID :string: "nonsense"
 
     for {
-        data := make([]byte, mem.Kilobyte*16)
+        data := make([]byte, mem.Kilobyte*32)
         n, recvErr := net.recv_tcp(socket, data)
         if recvErr != nil {
             if recvErr == net.TCP_Recv_Error.Connection_Closed {
@@ -100,9 +102,13 @@ handleClientTask :: proc(task: thread.Task) {
             res.method = "isPrime"
             handlerArr : [dynamic]byte
             defer delete(handlerArr)
-            for b, i in data[currentI:n] {
+            for b, i in data[currentI:] {
                 if b == 10 {
                     currentI += 1
+                    break
+                }
+                if b == 0 {
+                    // fmt.println(string(data[currentI-10:currentI]))
                     break
                 }
                 append(&handlerArr, b)
