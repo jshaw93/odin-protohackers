@@ -9,12 +9,11 @@ import "core:strings"
 import "core:unicode/utf8"
 import "core:encoding/json"
 import "core:strconv"
-import "../../../odintools/stringTools"
 
 ADDR :: "0.0.0.0"
 
 ClientTask :: struct {
-    socket: ^net.TCP_Socket,
+    socket: net.TCP_Socket,
     clientEndpoint: net.Endpoint,
     clientID: i32
 }
@@ -58,16 +57,16 @@ main :: proc() {
         net.set_option(clientSock, .Receive_Buffer_Size, mem.Kilobyte*32)
         net.set_option(clientSock, .Linger, time.Second*15)
         net.set_option(clientSock, .Keep_Alive, true)
-        task := ClientTask{clientEndpoint=clientEnd, socket=&clientSock, clientID=clientID}
+        task := new_clone(ClientTask{clientEndpoint=clientEnd, socket=clientSock, clientID=clientID})
         clientID += 1
-        thread.pool_add_task(&pool, context.allocator, handleClientTask, &task)
+        thread.pool_add_task(&pool, context.allocator, handleClientTask, task)
     }
 }
 
 handleClientTask :: proc(task: thread.Task) {
     clientTask := transmute(^ClientTask)task.data
     client := clientTask.clientID
-    socket := clientTask.socket^
+    socket : net.TCP_Socket = clientTask.socket
     fmt.println("Handling new client:", client)
     INVALID :string: "nonsense"
 
@@ -102,13 +101,10 @@ handleClientTask :: proc(task: thread.Task) {
             res.method = "isPrime"
             handlerArr : [dynamic]byte
             defer delete(handlerArr)
-            for b, i in data[currentI:] {
+            _tmp := data[currentI:n]
+            for b, i in _tmp {
                 if b == 10 {
                     currentI += 1
-                    break
-                }
-                if b == 0 {
-                    // fmt.println(string(data[currentI-10:currentI]))
                     break
                 }
                 append(&handlerArr, b)
@@ -145,7 +141,9 @@ handleClientTask :: proc(task: thread.Task) {
             }
             for num in numsAreStrings {
                 if req.number == num {
-                    req.number = stringTools.i64ToString(num)
+                    buf : [258]u8
+                    numInt := int(num)
+                    req.number = strconv.itoa(buf[:], numInt)
                     break
                 }
             }
