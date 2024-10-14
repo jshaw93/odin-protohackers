@@ -87,7 +87,8 @@ handleClientTask :: proc(task: thread.Task) {
             return
         }
         bounds : int
-        currentI : int = 0
+        iterateBefore := 0 // Left window pointer
+        iterateAfter := 0 // Right window pointer
         iterateData : for {
             if data[0] != 123 {
                 fmt.println("invalid first byte", data[0])
@@ -99,25 +100,19 @@ handleClientTask :: proc(task: thread.Task) {
             req : Request
             res : Response
             res.method = "isPrime"
-            handlerArr : [dynamic]byte
-            defer delete(handlerArr)
-            _tmp := data[currentI:n]
+            _tmp := data[iterateBefore:n]
             for b, i in _tmp {
                 if b == 10 {
-                    currentI += 1
+                    iterateAfter += 1
                     break
                 }
-                append(&handlerArr, b)
-                currentI += 1
+                iterateAfter += 1
             }
-            // fmt.println(len(handlerArr), currentI)
-            if len(handlerArr) < 1 || handlerArr[0] == 0 {
-                break iterateData
-            }
+            if iterateBefore == n do break iterateData
             numsAreStrings : [dynamic]i64
             defer delete(numsAreStrings)
             splitChars : []string = {"{", ",", ":", "}"}
-            strHandle := strings.split_multi(string(handlerArr[:]), splitChars)
+            strHandle := strings.split_multi(string(data[iterateBefore:iterateAfter]), splitChars)
             // if client >= 6 do fmt.println(string(handlerArr[:]), client)
             for i, index in strHandle {
                 if i == "\"number\"" {
@@ -131,14 +126,15 @@ handleClientTask :: proc(task: thread.Task) {
                     }
                 }
             }
-            unmarshalErr := json.unmarshal(handlerArr[:], &req, json.Specification.JSON5)
+            unmarshalErr := json.unmarshal(data[iterateBefore:iterateAfter], &req, json.Specification.JSON5)
             if unmarshalErr != nil {
-                fmt.println("invalid json", string(handlerArr[:]))
+                fmt.println("invalid json", string(data[iterateBefore:iterateAfter]))
                 net.send_tcp(socket, transmute([]byte)INVALID)
                 fmt.println("Closing connection", client)
                 net.close(socket)
                 return
             }
+            iterateBefore = iterateAfter // Move left window pointer to current
             for num in numsAreStrings {
                 if req.number == num {
                     buf : [258]u8
